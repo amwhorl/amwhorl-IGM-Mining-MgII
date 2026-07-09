@@ -48,11 +48,12 @@ function y=pltQSO(this_flux, this_wavelengths, this_mu, c4_muL2, c4_muL1, var, t
     % p2.LineWidth = 0.8;
     
     %Plot z_mgii
-    p = plot(this_z_c4(cut_region),this_mu(cut_region),'r-');
-    p.LineWidth=1.5;
-    hold on
     p = plot(this_z_c4(norm_cut),this_mu(norm_cut),'m-');
     p.LineWidth=1.5;
+    hold on
+    p = plot(this_z_c4(cut_region),this_mu(cut_region),'r-');
+    p.LineWidth=1.5;
+
 
 
 
@@ -75,6 +76,7 @@ function y=pltQSO(this_flux, this_wavelengths, this_mu, c4_muL2, c4_muL1, var, t
     % xlim([0.5, max(this_z_c4)])
     xlabel('$\lambda$/2796.4 (\AA) - 1', 'Interpreter','latex');
     ylabel('Normalised Flux');
+    ylim([0,4])
     % title(ttl, 'FontSize', 5, 'interpreter', 'latex')
 
     % for i=1:length(z_PM_test_plot)

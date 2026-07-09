@@ -1,6 +1,6 @@
 clear
 fprintf('Setting paramters ...\n')
-num_quasars = 10000;
+num_quasars = 1000;
 cataloging = 0;
 preloading =0;
 sampling   = 0;
@@ -19,7 +19,7 @@ priorType = 1;
 ind_S=1;
 saving=1;
 cores = 6;
-SNR_threshhold = 3.0;
+SNR_threshhold = 0;
 set_parameters_DESI_dr1_MgII
 training_set_name
 fprintf('Building catalogs ...\n')

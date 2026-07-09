@@ -85,13 +85,14 @@ map_sigma_MgIIL2              = nan(num_quasars, max_MgII);
 p_MgII                        = nan(num_quasars, max_MgII);
 p_MgIIL1                      = nan(num_quasars, max_MgII);
 p_no_MgII                     = nan(num_quasars, max_MgII);
-REW_2796_dr7                = nan(num_quasars, max_MgII);
-num_pixel_MgII               = nan(num_quasars, max_MgII, 2);
-all_B                       = nan(num_quasars, max_MgII);
-fit_chi2                    = nan(num_quasars,1);
-MgII_samples = (max_sigma-min_sigma)*offset_sigma_samples + min_sigma;
-sigma_MgII_samples = min_sigma + (max_sigma-min_sigma)*offset_sigma_samples;
-ID = all_QSO_ID_dr1(test_ind);
+REW_2796                      = nan(num_quasars, max_MgII);
+REW_2803                      = nan(num_quasars, max_MgII);
+num_pixel_MgII                = nan(num_quasars, max_MgII, 2);
+all_B                         = nan(num_quasars, max_MgII);
+fit_chi2                      = nan(num_quasars,1);
+MgII_samples                  = (max_sigma-min_sigma)*offset_sigma_samples + min_sigma;
+sigma_MgII_samples            = min_sigma + (max_sigma-min_sigma)*offset_sigma_samples;
+ID                            = all_QSO_ID_dr1(test_ind);
 % plt_count=0;
 % FN_IDs = importdata('FN-list.csv');
 % in_Kathy_FN_list = ismember(ID, FN_IDs);
@@ -127,35 +128,25 @@ for quasar_ind = 1:numel(all_wavelengths)
      this_rest_wavelengths = emitted_wavelengths(this_wavelengths, z_qso);
 
     unmasked_ind = (this_rest_wavelengths >= min_lambda) & ...
-       (this_rest_wavelengths <= max_lambda) & (this_sigma_pixel>0) &...
-         ~(abs(this_rest_wavelengths- 1549.48)< 15)& ... % CIV emission line masking --> 30A comes from typical FWHM of CIV emission in SDSS Cite{Monadi & Bird-2022}
-         ~(abs(this_rest_wavelengths- 1908.8)< 12); % & ... % CIII masking here
-         % ~(abs(this_rest_wavelengths - 2799.94) < 12); % MgII emission Line Masking
-         % ~(abs(this_rest_wavelengths- 1393.8)< 6); % SIV emission line masking --> A is FWHM according to
-    % mask bottom 1% S/N
-    % signalnoise = this_flux(unmasked_ind)./sqrt(this_noise_variance(unmasked_ind));
-    % [varSort, ind] = sort(signalnoise,'descend');
-    % h = round(numel(varSort)*0.01);
-    % var_cut = 1:h;
-    % ind_remove = ind(var_cut); 
-    % snflag = zeros(numel(signalnoise),1);
-    % snflag(ind_remove) = true;   
-    % this_pixel_mask(unmasked_ind) = this_pixel_mask(unmasked_ind) | snflag;
+       (this_rest_wavelengths <= max_lambda) & (this_sigma_pixel>0);% &...
+         %~(abs(this_rest_wavelengths- 1549.48)< 15)& ... % CIV emission line masking --> 30A comes from typical FWHM of CIV emission in SDSS Cite{Monadi & Bird-2022}
+         %~(abs(this_rest_wavelengths- 1908.8)< 12) & ... % CIII masking here
+         %~(abs(this_rest_wavelengths - 2799.94) < 12) & ... % MgII emission Line Masking
+         %~(abs(this_rest_wavelengths- 1393.8)< 6); % SIV emission line masking --> A is FWHM according to
 
-    % keep complete copy of equally spaced wavelengths for absorption
-    % computation
+    % keep complete copy of equally spaced wavelengths for absorption computation
     this_unmasked_wavelengths = this_wavelengths(unmasked_ind);
     this_unmasked_sigma_pixel = this_sigma_pixel(unmasked_ind); % avoiding mismathed sizes for padded variavles and NaNs
 %     % [mask_ind] remove flux pixels with pixel_mask; pixel_mask is defined
 %     % in read_spec_DESI.m
-    ind = unmasked_ind & (~this_pixel_mask);
+    ind                   =  unmasked_ind & (~this_pixel_mask);
     this_wavelengths      =      this_wavelengths(ind);
     this_rest_wavelengths = this_rest_wavelengths(ind);
     this_flux             =             this_flux(ind);
     this_noise_variance   =   this_noise_variance(ind);
     this_sigma_pixel      =      this_sigma_pixel(ind);
     
-    %SNR skip filter %turn off for main run?
+    % SNR Filter
     SNR = median(this_flux./sqrt(this_noise_variance));
     all_SNR(quasar_ind) = SNR;
     if SNR<SNR_threshhold
@@ -191,12 +182,11 @@ for quasar_ind = 1:numel(all_wavelengths)
     this_M  =  M_interpolator({this_rest_wavelengths, 1:k});
 
 
-
+    % Define Search Range
     min_z_MgIIs(quasar_ind) = min_z_MgII(this_wavelengths, z_qso);
-    % instead of this_wavelengths I puting 1310A where is the lower limit of CIV search in C13
-    %min_z_MgIIs(quasar_ind) = min_z_MgII(1310, z_qso);
     max_z_MgIIs(quasar_ind) = max_z_MgII(z_qso, max_z_cut);
 
+    % Constrain Samples to Search Range
     sample_z_MgII = ...
         min_z_MgIIs(quasar_ind) +  ...
         (max_z_MgIIs(quasar_ind) - min_z_MgIIs(quasar_ind)) * offset_z_samples;
@@ -210,7 +200,6 @@ for quasar_ind = 1:numel(all_wavelengths)
    % building a finer wavelength and mask arrays 
    % by adding the mean of ith and ith +1 element
 
-    % fprintf('size(this_w)=%d-%d\n', size(this_unmasked_wavelengths));
     padded_wavelengths_fine = ...
         [logspace(log10(min(this_unmasked_wavelengths)) - width * pixel_spacing/(nAVG+1), ...
         log10(min(this_unmasked_wavelengths)) - pixel_spacing/(nAVG+1),...
@@ -222,11 +211,11 @@ for quasar_ind = 1:numel(all_wavelengths)
         ];
 
       padded_sigma_pixels_fine = ...
-        [this_sigma_pixel(1)*ones(width,1);...
-        finer(this_sigma_pixel, nAVG)';...
-        this_sigma_pixel(end)*ones(width,1)];
+        [this_unmasked_sigma_pixel(1)*ones(width,1);...
+        finer(this_unmasked_sigma_pixel, nAVG)';...
+        this_unmasked_sigma_pixel(end)*ones(width,1)];
 
-        % % when broadening is off
+        % when broadening is off
         % padded_wavelengths = this_unmasked_wavelengths;
 
     % [mask_ind] to retain only unmasked pixels from computed absorption profile
@@ -235,17 +224,33 @@ for quasar_ind = 1:numel(all_wavelengths)
     ind = (~this_pixel_mask(unmasked_ind));
     
     % compute probabilities under DLA model for each of the sampled
-    % (normalized offset, log(N HI)) pairs
+    % (normalized offset, log(N HI)) pairsl
     lenW_unmasked = length(this_unmasked_wavelengths);
     ind_not_remove = true(size(this_flux));
     absorptionL2_all =1;
     absorptionL1_all =1;
 
-    % Calculate Chi^2
-    difference = (this_mu - this_flux).^2;
-    weighteddiff = difference./ (this_mu.^2);
-    Chi2 = mean(weighteddiff);
+    % Calculate Goodness of Continuum Fit
+    bin_size = 20;
+    divisable_array_legnth = (length(this_mu) - mod(length(this_mu),20));
+    difference_bins = zeros(1,divisable_array_legnth/bin_size + 1); 
+    this_difference_weighted = (this_mu - this_flux);
+    % divide flux and continuum arrays into bins of [bin_size] length and
+    % calculate the mean of each of those bins
+    idx_start = 1;
+    idx_stop = bin_size;
+    for binning_idx = 1:(length(difference_bins) -1)
+        difference_bins(binning_idx) = mean(this_difference_weighted(idx_start:idx_stop));
+        idx_start = idx_start + bin_size;
+        idx_stop = idx_stop + bin_size;
+    end
+    
+    % Custom bins for the tails of both arrays
+    difference_bins(end)   = mean(this_difference_weighted(idx_start:end));
+    % Calculate Chi square of difference bins
+    Chi2 = sum(difference_bins.^2);
     fit_chi2(quasar_ind) = Chi2;
+
     if null_search == 1 % limits to 1 search if looking for no-absorber spectra to inject with sumilated absorbers
         max_MgII = 1;
     end
@@ -293,11 +298,12 @@ for quasar_ind = 1:numel(all_wavelengths)
 
             absorptionL2_fine = voigt_iP(padded_wavelengths_fine, sample_z_MgII(i), ...
             nMgII_samples(i),num_lines, sigma_MgII_samples(i), padded_sigma_pixels_fine);
-            absorptionL2_fine_NaNs = isnan(absorptionL2_fine); % replaces NaN's created by voigt profile, maybe temp fix
-            absorptionL2_fine(absorptionL2_fine_NaNs) = 1;
-            if (nnz(absorptionL2_fine_NaNs) > 0) && (i == 1) && (num_MgII == 1) % Keep track of spectra that had NaNs replaced
-                qso_NaN_replacedL2_ind = [qso_NaN_replacedL2_ind, quasar_ind];
-            end
+            % absorptionL2_fine_NaNs = isnan(absorptionL2_fine); % replaces NaN's created by voigt profile, maybe temp fix
+            % absorptionL2_fine(absorptionL2_fine_NaNs) = 1;
+            % % get w_r for this sample  
+            % if (nnz(absorptionL2_fine_NaNs) > 0) && (i == 1) && (num_MgII == 1) % Keep track of spectra that had NaNs replaced
+            %     qso_NaN_replacedL2_ind = [qso_NaN_replacedL2_ind, quasar_ind];
+            % end
             % average fine absorption and shrink it to the size of original array
             % as large as the unmasked_wavelengths
 
@@ -318,11 +324,11 @@ for quasar_ind = 1:numel(all_wavelengths)
 
             absorptionL1_fine = voigt_iP(padded_wavelengths_fine, sample_z_MgII(i), ...
             nMgII_samples(i),num_lines, sigma_MgII_samples(i), padded_sigma_pixels_fine);
-            absorptionL1_fine_NaNs = isnan(absorptionL1_fine); % replaces NaN's created by voigt profile, maybe temp fix
-            absorptionL1_fine(absorptionL1_fine_NaNs) = 1;
-            if (nnz(absorptionL1_fine_NaNs) > 0) && (i == 1) && (num_MgII == 1) % Keep track of spectra that had NaNs replaced
-                qso_NaN_replacedL1_ind = [qso_NaN_replacedL1_ind, quasar_ind];
-            end
+            % absorptionL1_fine_NaNs = isnan(absorptionL1_fine); % replaces NaN's created by voigt profile, maybe temp fix
+            % absorptionL1_fine(absorptionL1_fine_NaNs) = 1;
+            % if (nnz(absorptionL1_fine_NaNs) > 0) && (i == 1) && (num_MgII == 1) % Keep track of spectra that had NaNs replaced
+            %     qso_NaN_replacedL1_ind = [qso_NaN_replacedL1_ind, quasar_ind];
+            % end
             % average fine absorption and shrink it to the size of original array
             % as large as the unmasked_wavelengths
 
@@ -416,19 +422,41 @@ for quasar_ind = 1:numel(all_wavelengths)
         % fprintf('s(emitted_finer_unmasked)-%d-%d\n', size(emitted_wavelengths(finer(this_unmasked_wavelengths, nAVG), z_qso)))                                    
 
 
+            % REW Calculations for both lines
 
-             aL1_fine = voigt_iP(padded_wavelengths_fine,...
+
+            aL1_fine = voigt_iP(padded_wavelengths_fine,... % singlet absorbtion profile -> whichever line is most probable
                                          map_z_MgIIL2(quasar_ind, num_MgII), ...
                                          10^map_N_MgIIL2(quasar_ind, num_MgII), 1,...
                                          map_sigma_MgIIL2(quasar_ind, num_MgII), ...
                                          padded_sigma_pixels_fine);
-
+            % aL1_fine_NaNs = isnan(aL1_fine); % replaces NaN's created by voigt profile, maybe temp fix
+            % aL1_fine(aL1_fine_NaNs) = 1;
             aL1 = Averager(aL1_fine, nAVG, lenW_unmasked);
+            aL1 = aL1(ind); 
 
-            REW_2796_dr7(quasar_ind, num_MgII) = trapz(this_unmasked_wavelengths, 1-aL1)/(1+z_qso);
-%          
-            fprintf('REW(%d,%d)=%e\n', quasar_ind, num_MgII, REW_2796_dr7(quasar_ind, num_MgII));
-%         end
+            aL2_fine = voigt_iP(padded_wavelengths_fine,... % doublet absorbtion profile
+                                         map_z_MgIIL2(quasar_ind, num_MgII), ...
+                                         10^map_N_MgIIL2(quasar_ind, num_MgII), 2,...
+                                         map_sigma_MgIIL2(quasar_ind, num_MgII), ...
+                                         padded_sigma_pixels_fine);
+            % aL2_fine_NaNs = isnan(aL2_fine); % replaces NaN's created by voigt profile, maybe temp fix
+            % aL2_fine(aL2_fine_NaNs) = 1;
+            aL2 = Averager(aL2_fine, nAVG, lenW_unmasked);
+            aL2 = aL2(ind);
+            % checks to ensure that we are calculating the correct REW for
+            % the correct line.
+            [~,abs_minL1] = min(aL1);
+            [~,abs_minL2] = min(aL2./aL1);
+            if abs_minL1 > abs_minL2 % If the singlet line is a higher ind, its at a higher wavelegnth, and so its the 2803 line
+                REW_2803(quasar_ind, num_MgII) = trapz(this_unmasked_wavelengths(ind), 1-aL1)/(1+map_z_MgIIL2(quasar_ind, num_MgII));
+                REW_2796(quasar_ind, num_MgII) = trapz(this_unmasked_wavelengths(ind), 1-(aL2./aL1))/(1+map_z_MgIIL2(quasar_ind, num_MgII));
+            else % Vice versa -> the singlet line was the 2796 line
+                REW_2796(quasar_ind, num_MgII) = trapz(this_unmasked_wavelengths(ind), 1-aL1)/(1+map_z_MgIIL2(quasar_ind, num_MgII));
+                REW_2803(quasar_ind, num_MgII) = trapz(this_unmasked_wavelengths(ind), 1-(aL2./aL1))/(1+map_z_MgIIL2(quasar_ind, num_MgII));
+            end
+            fprintf('REW(%d,%d)=%e\n', quasar_ind, num_MgII, REW_2796(quasar_ind, num_MgII));
+
 
          if(plotting==1) 
             % plotting
@@ -438,25 +466,18 @@ for quasar_ind = 1:numel(all_wavelengths)
                 log_posteriors_MgIIL1(quasar_ind, num_MgII), ...
                 log_posteriors_MgIIL2(quasar_ind,num_MgII)], [], 2);
 
+            mu_post = mean_posterior_continuum(this_flux, this_mu,...
+        this_M, this_noise_variance);
+
             num_lines=1;
             absorptionL1_fine= voigt_iP(padded_wavelengths_fine,...
                             map_z_MgIIL1(quasar_ind, num_MgII),1.2*(10^map_N_MgIIL1(quasar_ind, num_MgII)),...
                             num_lines, map_sigma_MgIIL2(quasar_ind, num_MgII), padded_sigma_pixels_fine);
-            % absorptionL1_fine_NaNs = isnan(absorptionL1_fine); % replaces NaN's created by voigt profile, maybe temp fix
-            % absorptionL1_fine(absorptionL1_fine_NaNs) = 1;
             absorptionL1 = Averager(absorptionL1_fine, nAVG, lenW_unmasked);
             absorptionL1 = absorptionL1(ind);
-            MgII_muL1    = this_mu     .* absorptionL1;
+            MgII_muL1    = mu_post     .* absorptionL1;
 
-            num_lines=2;
-            absorptionL2_fine= voigt_iP(padded_wavelengths_fine,...
-                map_z_MgIIL2(quasar_ind,  num_MgII), 1.2*(10^map_N_MgIIL2(quasar_ind, num_MgII)),...
-                num_lines, map_sigma_MgIIL2(quasar_ind, num_MgII), padded_sigma_pixels_fine);
-            % absorptionL2_fine_NaNs = isnan(absorptionL2_fine); % replaces NaN's created by voigt profile, maybe temp fix
-            % absorptionL2_fine(absorptionL2_fine_NaNs) = 1;
-            absorptionL2 = Averager(absorptionL2_fine, nAVG, lenW_unmasked);
-            absorptionL2 = absorptionL2(ind);
-            MgII_muL2    = this_mu     .* absorptionL2;
+            MgII_muL2    = mu_post     .* aL2;
             
             if (null_search == 0) || ((null_search == 1) && (p_no_MgII(quasar_ind, num_MgII) > 0.5))
                 % Different ways of quanitifying how good the continuum/doublet fit is
@@ -465,17 +486,7 @@ for quasar_ind = 1:numel(all_wavelengths)
                 normalization_cut_range = (this_wavelengths > (2150*(z_qso + 1))) & ...
                  (this_wavelengths < (2250*(z_qso + 1)));
     
-                
-                [B,chi,absorber_gate_mask] = absorber_gate(this_flux,this_wavelengths,this_mu,MgII_muL2);
-                all_B(quasar_ind,num_MgII) = B;
-    
-    
-                % Equivalent width calculation 
-                % if (num_MgII==ind_EW_large_PM1GP0_numc4(quasar_ind))
-    
-    
-    
-    
+  
                 % ttl = sprintf('ID:%s, zQSO:%.2f, P(CIV)=%.2f, P(S)=%.2f, z_{CIV}=%.6f\nz_{PM}=[%.4f,%.4f,%.4f,%.4f]\nREW_{PM}=[%.3f,%.3f,%.3f,%.3f]\n errREW_{PM}=[%.3f,%.3f,%.3f,%.3f], REW(GP)=%.3f, err(GP)=%.3f',  ...
                 %     this_ID, z_qso, p_MgII(quasar_ind, num_MgII), p_MgIIL1(quasar_ind, num_MgII),  map_z_MgIIL2(quasar_ind, num_MgII), ...
                 %     z_PM_test(quasar_ind,1:4),...
@@ -486,10 +497,11 @@ for quasar_ind = 1:numel(all_wavelengths)
                 % dv = DZ./(1+z_PM_test(quasar_ind, 1:4))*speed_of_light/1e3;
                 
                 ttl = sprintf(['ID:%s, zQSO:%.2f\n P(MgII)=%.2f, P(S)=%.2f, z_{MgII}=%.6f, S/N=%.2f, sigma=%.3f, ' ...
-                    'N=%.2f\n B=%.4f, \\chi^{2}=%.4f'],  ...
+                    'N=%.2f\n W_{0}^{2796}=%.3f, W_{0}^{2803}=%.3f, \\chi^{2}=%.4f, log(P(D|M_{N}))=%.4f'],  ...
                     this_ID, z_qso, p_MgII(quasar_ind, num_MgII), p_MgIIL1(quasar_ind, num_MgII),  ...
                     map_z_MgIIL2(quasar_ind, num_MgII), SNR, map_sigma_MgIIL2(quasar_ind, num_MgII), ...
-                    map_N_MgIIL2(quasar_ind, num_MgII), all_B(quasar_ind,num_MgII),fit_chi2(quasar_ind));
+                    map_N_MgIIL2(quasar_ind, num_MgII), REW_2796(quasar_ind,num_MgII),...
+                    REW_2803(quasar_ind,num_MgII),fit_chi2(quasar_ind),log_likelihoods_no_MgII(quasar_ind,1));
                 ttl; 
     
                 % dz_Doppler = kms_to_z(sqrt(2)*4*map_sigma_MgIIL2(quasar_ind, num_MgII)/1e5); % in km to z
@@ -503,7 +515,7 @@ for quasar_ind = 1:numel(all_wavelengths)
                 % ind_zoomL2 = (abs(this_z_2796-map_z_MgIIL2(quasar_ind, num_MgII))<20*kms_to_z(map_sigma_MgIIL2(quasar_ind, num_MgII)/1e5)*(1+z_qso));
                 % ind_zoomL1 = (abs(this_z_2796-map_z_MgIIL1(quasar_ind, num_MgII))<20*kms_to_z(map_sigma_MgIIL2(quasar_ind, num_MgII)/1e5)*(1+z_qso));
                 
-                pltQSO(this_flux, this_wavelengths, this_mu, MgII_muL2, MgII_muL1,...
+                pltQSO(this_flux, this_wavelengths, mu_post, MgII_muL2, MgII_muL1,...
                     this_noise_variance, ttl, fid,ind_not_remove, lambda_cut_range,normalization_cut_range)
                 % figure(num_MgII)
                 % clf("reset")
@@ -538,8 +550,8 @@ variables_to_save = {'releaseTest', 'training_set_name', ...
     'sample_log_likelihoods_MgIIL2', 'log_likelihoods_MgIIL2'...
     'log_posteriors_no_MgII', 'log_posteriors_MgIIL1', 'log_posteriors_MgIIL2',...
     'model_posteriors', 'p_no_MgII', 'p_MgIIL1' ...
-    'map_z_MgIIL2', 'map_N_MgIIL2', 'map_sigma_MgIIL2' ,'p_MgII', 'REW_2796_dr7',...
-    'all_SNR','all_B','fit_chi2'};
+    'map_z_MgIIL2', 'map_N_MgIIL2', 'map_sigma_MgIIL2' ,'p_MgII', 'REW_2796',...
+    'REW_2803','all_SNR','all_B','fit_chi2'};
 
 filename = sprintf('%s/processed_sigma_125_Spline_2200-2300_%s.mat', ...
     processed_directory(releaseTest), ...

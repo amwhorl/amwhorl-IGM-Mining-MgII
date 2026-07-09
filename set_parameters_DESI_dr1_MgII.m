@@ -112,7 +112,7 @@ min_z_MgII = @(wavelengths, z_qso) ...         % determines minimum z_DLA to sea
 train_ratio =0.99;
 sample_name = sprintf("N-%d-%d-Sigma-%d-%d-Num-%d",floor(fit_min_log_nMgII*100),floor(100*fit_max_log_nMgII), min_sigma,max_sigma, num_MgII_samples);
 training_set_name = 'Seyfert_1555-2840';
-testing_set_name = 'null_search';
+testing_set_name = 'chi_2_test';
 mkdir(sprintf('output/dr1/plots/%s',testing_set_name))
 
 max_MgII = 10;

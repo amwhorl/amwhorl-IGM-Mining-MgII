@@ -20,7 +20,7 @@ function [wavelengths, flux, noise_variance, pixel_mask, sigma_pixel] = read_spe
   noise_variance = 1 ./ (inverse_noise_variance);
   % find low signal to noise pixels (may be cosmic rays etc that have been
   % missed)
-  signalnoise = flux./noise_variance;
+  signalnoise = flux./sqrt(noise_variance);
   snflag = signalnoise < 1.0;
   % [varSort, ind] = sort(signalnoise,'descend');
   % h = round(numel(varSort)*0.01);
